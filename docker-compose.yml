@@ -1,12 +1,14 @@
 services:
-  app:
+  streamlit:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: structured-output-api
+    container_name: mtl-pcgrad-dashboard
+    env_file:
+      - .env
     ports:
-      - "8787:8787"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8787
+      - "${STREAMLIT_PORT:-8501}:8501"
+    volumes:
+      - ./:/app
+    command: streamlit run app.py --server.address=0.0.0.0 --server.port=8501
     restart: unless-stopped

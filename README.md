@@ -1,76 +1,61 @@
-# Structured Output Fine-Tuning Artifacts
+# Multi-Task Learning with Gradient Surgery (PCGrad)
 
-## Methodology
-1. Curated 80 high-quality JSONL training samples (50 invoices, 30 purchase orders) with schema-consistent outputs.
-2. Tracked candidate review decisions in a curation log (80 kept + 8 rejected).
-3. Evaluated baseline and fine-tuned checkpoints on 20 held-out documents.
-4. Compared prompt iterations against difficult baseline failures.
-5. Documented failure analyses and training decisions.
+This project implements a TensorFlow multi-task learning (MTL) system with a custom training loop and PCGrad-style gradient surgery to mitigate gradient conflicts between two competing tasks.
 
-## Repository Structure
-- `data/` curated dataset and curation log.
-- `eval/` response dumps, score CSVs, summary comparison, and failure deep-dives.
-- `prompts/` prompt iteration history and prompt-level evaluation.
-- `screenshots/` generated PNG placeholders for config and loss curve visuals.
-- `scripts/validate_project.py` automated validator and JSONL schema normalizer.
-- `api/server.py` lightweight local endpoint server for health and project status checks.
-- `training_config.md` selected hyperparameters and two-run narrative.
-- `report.md` project analysis, including Prompting vs. Fine-Tuning.
+## What This Repository Includes
+- `generate_model_summary.py`: prints and saves architecture summaries.
+- `train_baseline.py`: trains baseline MTL with naive loss summation.
+- `train_pcgrad.py`: trains MTL with PCGrad and logs gradient cosine similarity.
+- `app.py`: Streamlit dashboard for conflict monitoring, performance comparison, and representation inspection.
+- `mtl/`: reusable model, data generation, config, and utility functions.
+- `results/`: generated outputs required by the rubric.
+- `Dockerfile` and `docker-compose.yml`: containerized Streamlit service.
+- `.env.example`: environment variable contract.
 
-## Key Outcomes
-- Baseline parse success: 11/20 (55%)
-- Fine-tuned parse success: 19/20 (95%)
-- Absolute parse-success gain: +40 percentage points
-- Field-level quality also improved, with fewer schema-format failures.
-
-## How To Validate Everything
-Run from repository root:
-
-```
-".venv/Scripts/python.exe" scripts/validate_project.py
+## Local Setup
+```bash
+python -m venv .venv
+.venv/Scripts/activate
+pip install -r requirements.txt
 ```
 
-If you need to re-normalize `data/curated_train.jsonl` to the schema keys:
-
-```
-".venv/Scripts/python.exe" scripts/validate_project.py --fix-jsonl
-```
-
-## Local Endpoints
-Start server:
-
-```
-".venv/Scripts/python.exe" api/server.py
+## Run Training and Artifact Generation
+```bash
+python generate_model_summary.py
+python train_baseline.py
+python train_pcgrad.py
 ```
 
-Available endpoints:
-- `GET /health`
-- `GET /endpoints`
-- `GET /project/status`
+Required outputs are generated in `results/`:
+- `model_architecture.txt`
+- `baseline_metrics.csv`
+- `pcgrad_metrics.csv`
+- `gradient_conflict.csv`
+- `final_metrics.json`
+- `analysis.md`
+- `representation_projection.csv`
 
-## Docker
-Build and run with Docker Compose:
+## Launch Dashboard Locally
+```bash
+streamlit run app.py --server.port 8501
+```
 
+## Dockerized Run (Single Command)
+1. Copy env template once:
+```bash
+cp .env.example .env
+```
+
+2. Launch:
 ```bash
 docker compose up --build
 ```
 
-Then test:
+3. Open dashboard:
+`http://localhost:8501`
 
-```bash
-curl http://127.0.0.1:8787/health
-curl http://127.0.0.1:8787/project/status
-```
-
-Stop containers:
-
-```bash
-docker compose down
-```
-
-Run validation in a container (one-off):
-
-```bash
-docker build -t structured-output-finetuning .
-docker run --rm structured-output-finetuning python scripts/validate_project.py
-```
+## Streamlit Test IDs
+The app includes required test hooks:
+- `data-testid="gradient-conflict-monitor"`
+- `data-testid="performance-dashboard"`
+- `data-testid="representation-inspector"`
