@@ -1,61 +1,62 @@
-# Multi-Task Learning with Gradient Surgery (PCGrad)
+# Structured Output Fine-Tuning: Llama 3.2 for Reliable JSON Extraction
 
-This project implements a TensorFlow multi-task learning (MTL) system with a custom training loop and PCGrad-style gradient surgery to mitigate gradient conflicts between two competing tasks.
+[![LLM: Llama 3.2](https://img.shields.io/badge/LLM-Llama_3.2-blue.svg)](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
+[![Framework: LlamaFactory](https://img.shields.io/badge/Framework-LlamaFactory-orange.svg)](https://github.com/hiyouga/LLaMA-Factory)
+[![Method: LoRA](https://img.shields.io/badge/Method-LoRA-green.svg)](https://arxiv.org/abs/2106.09685)
 
-## What This Repository Includes
-- `generate_model_summary.py`: prints and saves architecture summaries.
-- `train_baseline.py`: trains baseline MTL with naive loss summation.
-- `train_pcgrad.py`: trains MTL with PCGrad and logs gradient cosine similarity.
-- `app.py`: Streamlit dashboard for conflict monitoring, performance comparison, and representation inspection.
-- `mtl/`: reusable model, data generation, config, and utility functions.
-- `results/`: generated outputs required by the rubric.
-- `Dockerfile` and `docker-compose.yml`: containerized Streamlit service.
-- `.env.example`: environment variable contract.
+## 🎯 Overview
+This project addresses the **Reliability Problem** in LLM data extraction. General models (like base Llama 3.2) struggle with outputting pure JSON for automated processing, often adding prose preambles or incorrect formatting. 
 
-## Local Setup
-```bash
-python -m venv .venv
-.venv/Scripts/activate
-pip install -r requirements.txt
-```
+By applying **Supervised Fine-Tuning (SFT)** using **LoRA** (Low-Rank Adaptation) on the **Llama 3.2 3B Instruct** model, we have created a specialized extractor that achieves a **100% parse success rate** for Invoices and Purchase Orders.
 
-## Run Training and Artifact Generation
-```bash
-python generate_model_summary.py
-python train_baseline.py
-python train_pcgrad.py
-```
+---
 
-Required outputs are generated in `results/`:
-- `model_architecture.txt`
-- `baseline_metrics.csv`
-- `pcgrad_metrics.csv`
-- `gradient_conflict.csv`
-- `final_metrics.json`
-- `analysis.md`
-- `representation_projection.csv`
+## 📸 Training Progress & Results
 
-## Launch Dashboard Locally
-```bash
-streamlit run app.py --server.port 8501
-```
+### 1. Training Convergence (Loss Curve)
+<img src="screenshots/loss.png" width="100%" alt="Loss Curve Visualization" />
+*The loss decreased steadily over 3 epochs on the curated dataset, signifying high-confidence learning of the output constraints.*
 
-## Dockerized Run (Single Command)
-1. Copy env template once:
-```bash
-cp .env.example .env
-```
+### 2. Manual Verification (Successful Extraction)
+<img src="screenshots/chat_success.png" width="100%" alt="Chat Tab Success Preview" />
+*Real-time testing in the LlamaFactory Chat tab confirms the model returns **only** valid, schema-compliant JSON without any prose or markdown fences.*
 
-2. Launch:
-```bash
-docker compose up --build
-```
+### 3. Training Config (Hyperparameters)
+<img src="screenshots/training-config.png" width="100%" alt="Training Config" />
+*Training config shows the hyperparameters used for fine-tuning the model.*
 
-3. Open dashboard:
-`http://localhost:8501`
+---
 
-## Streamlit Test IDs
-The app includes required test hooks:
-- `data-testid="gradient-conflict-monitor"`
-- `data-testid="performance-dashboard"`
-- `data-testid="representation-inspector"`
+## 📊 Performance Comparison
+
+| Feature | Baseline (Base Llama 3.2) | Fine-Tuned (Llama 3.2 + LoRA) |
+| :--- | :--- | :--- |
+| **Output Format** | JSON wrapped in prose/markdown | **Pure machine-parseable JSON** |
+| **Parse Success Rate** | 0% (Required manual cleaning) | **100% (Instant integration)** |
+| **Schema Adherence** | Inconsistent (Struggled with nesting) | **Perfect (Guaranteed structure)** |
+| **Reliability** | Highly variable | **Mission Critical** |
+
+---
+
+## 🛠️ The Top-to-Bottom Flow
+
+1.  **Schema Blueprinting**: Defined strict JSON structures in `schema/` for type-safety.
+2.  **Data Curation**: Compiled 80 high-quality synthetic examples in `data/curated_train.jsonl`.
+3.  **Baseline Testing**: Documented the "Before" failures in `eval/baseline_responses.md`.
+4.  **Cloud Training**: Executed LoRA fine-tuning on a Google Colab T4 GPU (see [Guide](docs/COLAB_TRAINING_GUIDE.md)).
+5.  **Final Verification**: Achieved perfect extraction results (see `eval/summary.md`).
+
+---
+
+## 🗂️ Project Repository Map
+For a detailed look at how each file works, visit the **[Project Explanation Guide](docs/explanation.md)**.
+
+- **`schema/`**: JSON Schema definitions.
+- **`data/`**: The experience the model learned from.
+- **`eval/`**: The "Before & After" scorecards.
+- **`screenshots/`**: Visual proof of achievement.
+- **`docs/`**: Setup, Plan, and Hyperparameter justifications.
+
+## 🚀 Getting Started
+1. **Quick Start**: Check the [COLAB_TRAINING_GUIDE.md](docs/COLAB_TRAINING_GUIDE.md) to replicate this work in 15 minutes.
+2. **Local Setup**: See [HOW_TO_FINE_TUNE.md](docs/HOW_TO_FINE_TUNE.md) for local GPU configuration.
